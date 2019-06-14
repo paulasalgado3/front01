@@ -1,0 +1,52 @@
+
+
+<html>
+<head>
+</head>
+<body> Nombre: <input type='text' id='nombre'><br>
+	Color: <input type='text' id='color'><br>
+	Puerto: <input type='text' id='puerto'><br>
+	<div id="idcont" style="display:none"></div>
+	<script>
+		function createContainer(){
+		var nombre = document.getElementById("nombre").value;
+		var puerto = document.getElementById("puerto").value;
+		var color = document.getElementById("color").value;
+		var payload ='{"Image": "websrvvar","ExposedPorts": {"'+puerto+'/tcp": {}},"Env": ["NOMBRE='+nombre+'","COLOR='+color+'","PUERTO='+puerto+'"],"PortBindings": {"'+puerto+'/tcp": [{"HostPort": "'+puerto+'"}]}}';
+		var http = new XMLHttpRequest();
+		var url = "http://10.105.231.108:2376/containers/create";
+		http.open("POST", url);
+		http.setRequestHeader('Content-type', 'application/json');
+		http.onreadystatechange = function() {
+        if(http.readyState == 4) {
+            console.log("response 4: " + http.responseText);
+            rta = JSON.parse(http.responseText);
+            document.getElementById("idcont").value = rta.Id;
+            document.getElementById("iniciar").style="display:block";			
+        	} else {
+            console.log("state " + http.readyState);
+        	}
+    	}
+    	http.send(payload);
+	};
+
+	function startContainer(){
+		var idcont = document.getElementById("idcont").value;
+		var http2 = new XMLHttpRequest();
+		var url2 ='http://10.105.231.108:2376/containers/'+idcont+'/start';
+		http2.open("POST", url2);	
+		http2.onreadystatechange = function() {
+        if(http2.readyState == 4) {
+            console.log("response 4: " + http2.responseText);			
+        	} else {
+            console.log("state " + http2.readyState);
+        	}
+    	}
+    	http2.send();
+	};
+	</script>
+	<button type="button" id="crear" onclick="createContainer()">Crear!</button>
+	<button type="button" id="iniciar" onclick="startContainer()" style="display:none">Iniciar!</button>
+</body>
+</html>
+

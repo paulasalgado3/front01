@@ -1,0 +1,101 @@
+
+
+<html>
+<head>
+		<script src="jscolor.js"></script>
+</head>
+<body onload="refreshContenedores()"> 
+
+<div>
+	Nombre: <input type='text' id='nombre'>
+	Color: <input class="jscolor" id='color' value="4812F0">
+	Puerto: <input type='text' id='puerto'>
+	<button type="button" id="crear" onclick="createContainer()">Crear!</button>
+</div>
+	<div style="width: 100%; height: screen.height; background-color: red" id="contenedores"></div>
+
+
+	<script>
+		function crearIframe(src,id){
+		var ifrm = document.createElement('iframe');
+		ifrm.setAttribute('id', 'ifrm'); // assign an id
+
+		//document.body.appendChild(ifrm); // to place at end of document
+
+		// to place before another page element
+		var el = document.getElementById('contenedores');
+		el.parentNode.insertBefore(ifrm, el);
+
+		// assign url
+		ifrm.setAttribute('src', src);
+
+
+	}
+		function refreshContenedores(){
+		var http = new XMLHttpRequest();
+		var url = "http://10.105.231.108:2376/containers/json";
+		http.open("GET", url);
+		http.onreadystatechange = function() {
+			if(http.readyState == 4) {
+            //console.log("response 4: " + http.responseText);
+            rta = JSON.parse(http.responseText);
+            //console.log("respuesta JSON: "+ rta);
+
+			rta.forEach(function(element) {
+
+				if(element.Image == "websrvvar" && element.State == "running"){
+				//	console.log(element.Ports[0].PublicPort);
+				//	console.log(element.Id);
+					crearIframe("http://10.105.231.108:"+element.Ports[0].PublicPort,element.Id );
+				}
+  				
+			});
+
+        	} else {
+            	//console.log("state " + http.readyState);
+        	}
+    	};
+    	http.send();
+	}
+		function createContainer(){
+		var nombre = document.getElementById("nombre").value;
+		var puerto = document.getElementById("puerto").value;
+		var color = document.getElementById("color").value;
+		var payload ='{"Image": "websrvvar","ExposedPorts": {"'+puerto+'/tcp": {}},"Env": ["NOMBRE='+nombre+'","COLOR='+color+'","PUERTO='+puerto+'"],"PortBindings": {"'+puerto+'/tcp": [{"HostPort": "'+puerto+'"}]}}';
+		var http = new XMLHttpRequest();
+		var http2 = new XMLHttpRequest();
+		var url = "http://10.105.231.108:2376/containers/create";
+		http.open("POST", url);
+		http.setRequestHeader('Content-type', 'application/json');
+		http.onreadystatechange = function() {
+        if(http.readyState == 4) {
+            console.log("response 4: " + http.responseText);
+            rta = JSON.parse(http.responseText);
+            var url2 ='http://10.105.231.108:2376/containers/'+rta.Id+'/start';
+            http2.open("POST", url2);
+			
+			http2.onreadystatechange = function() {
+      		  if(http2.readyState == 4) {
+            	console.log("response 4: " + http2.responseText);
+            	//Agregar el contenedor recientemente creado a la vista
+            	crearIframe("http://10.105.231.108:"+puerto,rta.Id );
+            	
+        	} else {
+            	console.log("state " + http2.readyState);
+        	}
+    		};
+    		http2.send();
+		
+        } else {
+            console.log("state " + http.readyState);
+        }
+    	};
+    	http.send(payload);
+	};
+	
+		
+	</script>
+	
+</body>
+</html>
+
